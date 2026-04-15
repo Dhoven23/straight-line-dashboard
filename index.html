@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Straight Line System — Live Call Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#060606;--card:#0e0e0e;--card-cur:#0f1929;--border:#1e1e1e;--border-cur:#1d4ed8;
+  --text:#e2e8f0;--muted:#6b7280;--dim:#374151;--faint:#1a1a1a;
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.12);
+  --green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;
+  --ui:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'Courier New',Courier,monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100vh;font-size:14px;}
+
+/* ── Header ── */
+#hdr{position:sticky;top:0;z-index:200;background:rgba(6,6,6,0.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:20px;}
+#logo{font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--amber);}
+#hstats{display:flex;gap:24px;margin-left:auto;align-items:center;}
+.hstat{text-align:right;}
+.hstat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);display:block;margin-bottom:1px;}
+.hstat-val{font-size:16px;font-weight:600;line-height:1;}
+#htimer{font-family:var(--mono);}
+#hnew{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-family:var(--ui);transition:all .2s;}
+#hnew:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ── Progress ── */
+#prog-wrap{height:2px;background:var(--border);}
+#prog-bar{height:2px;background:var(--amber);transition:width .4s ease;width:8.33%;}
+
+/* ── Layout ── */
+#main{max-width:900px;margin:0 auto;padding:20px 16px 80px;}
+
+/* ── Step Cards ── */
+.sc{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .2s,background .2s;}
+.sc.cur{border-color:var(--border-cur);background:var(--card-cur);}
+.sc.done{opacity:0.5;}
+.sc.done:hover{opacity:0.75;}
+
+/* ── Step Header ── */
+.sh{display:flex;align-items:center;gap:14px;padding:13px 18px;cursor:pointer;user-select:none;}
+.sh:hover{background:rgba(255,255,255,0.02);}
+.snum{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--dim);min-width:32px;line-height:1;letter-spacing:-0.02em;}
+.sc.cur .snum{color:var(--amber);}
+.sc.done .snum{color:var(--green);font-size:18px;}
+.smeta{flex:1;min-width:0;}
+.sname{font-size:14px;font-weight:600;margin-bottom:2px;}
+.ssub{font-size:11px;color:var(--muted);line-height:1.3;}
+.sdots{display:flex;gap:5px;flex-shrink:0;}
+.dot{width:8px;height:8px;border-radius:50%;opacity:0.18;}
+.dot.hit{opacity:1;}
+.chev{color:var(--dim);font-size:11px;transition:transform .2s;flex-shrink:0;}
+.sc.open .chev{transform:rotate(180deg);}
+
+/* ── Step Body ── */
+.sbody{display:none;padding:0 18px 18px;}
+.sc.open .sbody{display:block;}
+
+/* ── Script block ── */
+.slabel{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.sblock{background:#070707;border:1px solid var(--border);border-radius:6px;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.8;white-space:pre-wrap;color:#c9d1d9;margin-bottom:16px;}
+
+/* ── Color Buttons ── */
+.crow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;}
+.cbtn{border:none;border-radius:7px;padding:10px 4px;cursor:pointer;text-align:center;transition:transform .1s,box-shadow .1s;border:2px solid transparent;}
+.cbtn:active{transform:scale(0.96);}
+.cbtn.sel{border-color:currentColor;}
+.clabel{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;}
+.cword{display:block;font-size:9.5px;opacity:0.65;margin-top:2px;font-style:italic;line-height:1.3;}
+
+/* ── Handler ── */
+.hbox{border-left:3px solid;border-radius:0 6px 6px 0;padding:14px 16px;font-size:13.5px;line-height:1.75;margin:8px 0 14px;background:rgba(255,255,255,0.025);}
+.htext{}
+.hacts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.abtn{background:none;border:1px solid;border-radius:5px;padding:6px 13px;font-size:12px;cursor:pointer;font-family:var(--ui);transition:background .15s;}
+.abtn:hover{background:rgba(255,255,255,0.06);}
+.abtn.loop{border-color:var(--orange);color:var(--orange);}
+.abtn.adv{border-color:var(--green);color:var(--green);}
+.abtn.done-btn{border-color:var(--amber);color:var(--amber);}
+
+/* ── Nav bar ── */
+.nbar{display:flex;gap:8px;padding-top:14px;border-top:1px solid var(--border);align-items:center;margin-top:4px;}
+.nbtn{background:none;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--ui);transition:all .15s;}
+.nbtn:hover{border-color:var(--text);color:var(--text);}
+.nbtn.prime{border-color:var(--amber);color:var(--amber);}
+.nbtn.prime:hover{background:var(--amber);color:#000;}
+
+/* ── Session Log ── */
+#log-wrap{margin-top:32px;border-top:1px solid var(--border);padding-top:20px;}
+#log-wrap h3{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:12px;}
+#log-list{display:flex;flex-direction:column;gap:6px;}
+.log-item{background:var(--faint);border-radius:6px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:10px;}
+.log-step{color:var(--amber);font-family:var(--mono);font-weight:700;min-width:24px;}
+.log-color{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.log-name{color:var(--muted);}
+.log-outcome{color:var(--text);margin-left:auto;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div id="logo">⬡ Straight Line System</div>
+  <div id="hstats">
+    <div class="hstat">
+      <span class="hstat-label">Step</span>
+      <span class="hstat-val" id="hstep">1 / 12</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">Elapsed</span>
+      <span class="hstat-val" id="htimer">0:00</span>
+    </div>
+    <button id="hnew" onclick="newSession()">↺ New Call</button>
+  </div>
+</div>
+<div id="prog-wrap"><div id="prog-bar"></div></div>
+
+<div id="main">
+  <div id="slist"></div>
+  <div id="log-wrap" style="display:none;">
+    <h3>Session Log — Color Responses</h3>
+    <div id="log-list"></div>
+  </div>
+</div>
+
+<script>
+const CM={
+  g:{l:'HOT',   bg:'rgba(34,197,94,0.13)', cl:'#4ade80', bc:'#22c55e'},
+  y:{l:'WARM',  bg:'rgba(234,179,8,0.13)', cl:'#facc15', bc:'#eab308'},
+  o:{l:'FENCE', bg:'rgba(249,115,22,0.13)',cl:'#fb923c', bc:'#f97316'},
+  r:{l:'COLD',  bg:'rgba(239,68,68,0.13)', cl:'#f87171', bc:'#ef4444'},
+  p:{l:'CLOSED',bg:'rgba(168,85,247,0.13)',cl:'#c084fc', bc:'#a855f7'}
+};
+const CKS=['g','y','o','r','p'];
+
+const S=[
+
+[1,'Immediate Control','Seize the frame — own every second from hello',
+`"Hey [Name], it's [You] with [Company] — did I catch you at a terrible time?"
+
+[Project absolute certainty. You are the expert. This call is a gift to them.
+ Match their energy — then elevate it. Pace, then lead.]`,
+{g:[`"Not at all, go ahead"`,
+    `Perfect. Lock the frame immediately.\n\n"Great — I'll be quick. The reason I'm reaching out specifically to you today is [VALUE HOOK]..." → Advance to Step 2.`,
+    null],
+ y:[`"Sure, what's this about"`,
+    `Acknowledge + hook.\n\n"I appreciate it — the reason I'm reaching out is [VALUE HOOK]. I'll be brief." → Advance to Step 2.`,
+    null],
+ o:[`"Kind of busy right now"`,
+    `Reduce pressure, buy goodwill.\n\n"Completely understand — I only need 90 seconds. [One-sentence value prop]. Worth it?"\n\nYes → Step 2. No → "Totally — when's a better time?" → schedule callback.`,
+    1],
+ r:[`"Not really interested"`,
+    `Don't flinch. Redirect.\n\n"Fair — most people say that before they hear what I'm actually calling about. It's not for everyone. One quick question before I let you go?"\n\nGet ONE answer → that's your bridge to Step 2.`,
+    1],
+ p:[`"Remove me from your list"`,
+    `Absolute respect — plant a seed.\n\n"Absolutely, I'll take care of that right now. Before I do — is it the timing, or is [category] genuinely off the table for you right now?"\n\nIf they answer → re-engage. If they hang up → move on.`,
+    null]}],
+
+[2,'Gather Intelligence','Listen 80%, talk 20% — find the pain, the goal, the gap',
+`"Quick question before I go any further — just so I'm not wasting your time:
+[Discovery Question 1]. And how are you currently handling [key pain area]?
+What's working, what's not?"
+
+[Take notes. Find PAIN. Find the GOAL. Find the GAP between them.
+ This intelligence drives everything that follows.]`,
+{g:[`Opens up, shares freely`,
+    `Affirm and dig deeper.\n\n"That's really helpful. So from what I'm hearing — [paraphrase their situation]. Is that a fair summary?"\n\nBuild on this foundation → Step 3.`,
+    null],
+ y:[`Answers briefly, guarded`,
+    `Specific follow-up.\n\n"Got it. And just to dig a bit deeper — [specific follow-up Q]. Because that's actually very relevant to what I want to share with you."\n\nStay on Step 2 until you have the full picture.`,
+    2],
+ o:[`Vague, noncommittal`,
+    `Reframe the question.\n\n"Let me ask it differently — if you could change ONE thing about how you currently handle [area], what would it be?"\n\nStay on Step 2. Get them talking.`,
+    2],
+ r:[`"Why do you need to know that"`,
+    `Explain your reason.\n\n"Fair question. I only ask because [product] works very differently depending on the situation — the last thing I want is to show you something that's not a fit. That's it. Just one thing: [single key Q]?"`,
+    2],
+ p:[`"Just tell me what you're selling"`,
+    `One critical question, then proceed.\n\n"Absolutely — getting there. Just one thing first so I can make this relevant: [most critical Q]?"\n\nUse their answer as a bridge. Skip to Step 5 if they refuse to engage further.`,
+    null]}],
+
+[3,'Develop Rapport','Make them feel heard — mirror, match, find the connection',
+`"That makes total sense. You know, I work with a lot of people in your exact situation,
+and what I keep hearing is [shared pain]. Does that sound familiar?"
+
+[Reference what they told you. Let them feel seen and understood.
+ Rapport = trust. Trust = sale. Don't rush this step.]`,
+{g:[`"Exactly, that's us"`,
+    `Deepen it.\n\n"Right — and what most people in that spot tell me is that the thing that finally moved the needle was [emotional benefit tied to their pain]. That's actually a big part of why I wanted to reach out to you specifically." → Step 4.`,
+    null],
+ y:[`"Sort of, kind of"`,
+    `Explore the nuance.\n\n"Tell me more — what does it look like for you specifically?"\n\nBuild the connection before advancing. Stay here until you feel genuine rapport.`,
+    3],
+ o:[`Polite but distant`,
+    `Pivot to their actual frame.\n\n"Help me understand — what IS your biggest challenge with [area] right now?"\n\nLet them define the pain in their own words. Then mirror it back exactly.`,
+    3],
+ r:[`"Can we just get to the point"`,
+    `Respect and speed up.\n\n"Absolutely. Here's the deal: [one crisp sentence connecting their situation to your solution]."\n\nThey're a logical buyer — skip rapport and transition directly to Step 4.`,
+    null],
+ p:[`Cold, giving nothing`,
+    `Direct value hook, no fluff.\n\n"Look — I get it. Here's the honest version in 20 seconds: [What you do, who it's for, what changes for them]. Worth 60 more seconds?"\n\nStep 4 if yes. Close the call gracefully if no.`,
+    null]}],
+
+[4,'Transition','Bridge from their world to your solution — get the micro-yes',
+`"Based on everything you've shared with me, [Name], I think I can genuinely help you.
+Let me walk you through what we've been doing for people in exactly your situation.
+Is that cool?"
+
+[Get a YES before you pitch. This micro-commitment is critical.
+ If they say yes, they've agreed to listen. Never pitch without it.]`,
+{g:[`"Yeah, absolutely"`,
+    `Roll directly into Step 5. You have their permission and their attention. Lead strong.`,
+    null],
+ y:[`"What exactly is it"`,
+    `Brief category framing.\n\n"It's essentially [one-sentence category description]. Let me give you the quick version and you tell me if it's worth exploring further — fair?" → Step 5.`,
+    null],
+ o:[`"How long will this take"`,
+    `Time commitment answer.\n\n"Honestly, five minutes. If it's not a fit, I'll tell you — I'm not going to waste your time." → Step 5.`,
+    4],
+ r:[`"I really don't have time"`,
+    `Compressed pitch offer.\n\n"Give me literally 90 seconds — headline version. If it grabs you, we talk more. If not, I'll let you go. Deal?" → Compressed Step 5.`,
+    4],
+ p:[`"Just send me an email"`,
+    `Address it directly.\n\n"I will — and I want to. But what I'm about to share makes a lot more sense in a two-minute conversation than any email can convey. Can I just cover the key points?"\n\nYes → Step 5. No → get their email + schedule a call.`,
+    null]}],
+
+[5,'Give Presentation','Logic first, emotion second, certainty of company third',
+`"Here's what [Product] does: [Logical benefit 1], [Logical benefit 2], [Logical benefit 3].
+But here's what gets people genuinely excited — [Emotional benefit tied directly to their pain].
+And the company behind all of this has [credibility proof: years, clients, specific results]."
+
+[THE THREE TENS: Certainty about the Product. Certainty about You. Certainty about the Company.
+ Hit all three. Never skip one. This is where logical + emotional stacking happens.]`,
+{g:[`"This sounds interesting"`,
+    `Expand the emotional angle. Get vivid and specific.\n\n"For someone in your exact situation — [their specific pain] — what that means in practice is [vivid, concrete outcome]. That's what usually gets people genuinely excited about this." → Step 6.`,
+    null],
+ y:[`"Tell me more about [X]"`,
+    `That's their buying signal — go deep on that exact angle.\n\nStack proof on the thing they asked about: case study, specific stat, client story. Then close. → Step 6.`,
+    null],
+ o:[`"How does it actually work"`,
+    `Mechanism explanation.\n\n"The basic mechanics are: [Step 1] → [Step 2] → [Step 3]. Pretty simple. The part most people are surprised by is [the most impressive element of the process]." → Step 6.`,
+    5],
+ r:[`"Sounds expensive"`,
+    `Value stack before price — always.\n\n"Before we even talk price, make sure you understand what you're actually getting: [Stack 3 specific benefits]. Most clients see [specific result]. When you think about it that way, the question isn't what it costs — it's what it's worth to you." → Step 6.`,
+    5],
+ p:[`"I need to think about it"`,
+    `Isolate: think about WHAT exactly?\n\n"Absolutely. What specifically do you want to think about? If it's [objection A], I can address that right now. Or is it [objection B]?"\n\nIdentify the real block → loop to the relevant step.`,
+    7]}],
+
+[6,'Ask for the Order','Assume the sale — ask HOW, never IF',
+`"Here's what I want to do — let's get you started with [product/plan].
+It's [price], and we can have you going as early as [timeframe].
+Does [payment option A] work for you, or would you prefer [payment option B]?"
+
+[Assumptive close. Give two yes-options. Matter-of-fact tone — this is the obvious next step.
+ Silence after the close is golden. Don't fill it.]`,
+{g:[`"Okay, let's do it"`,
+    `STOP — CEMENT IMMEDIATELY.\n\nDo NOT keep selling. Do not say another word about the product.\n\n"Perfect. Let me get you set up right now."\n\n→ Jump directly to Step 11 before any second thoughts emerge.`,
+    null],
+ y:[`"Sounds good but..."`,
+    `Handle the 'but' directly.\n\n"Tell me what the 'but' is." → Listen fully without interrupting.\n\n"I hear you. Here's the thing — [address the specific 'but' they gave you]." → Step 7.`,
+    7],
+ o:[`"Let me think about it"`,
+    `Classic soft no. Surface the real objection.\n\n"Of course — and I want you to make the right decision. What specifically are you thinking about? Because if there's something I haven't addressed, I'd rather handle it now than have you sit with it." → Step 7.`,
+    7],
+ r:[`"I'm not ready for this"`,
+    `Loop to deflect sequence.\n\n"Completely understand. Can I ask — what would need to be different for this to make sense for you right now?" → Listen → Step 7.`,
+    7],
+ p:[`"Absolutely not"`,
+    `Don't fight nuclear resistance. Lower the threshold completely.\n\n"Fair enough. Here's what I'd suggest instead of the full thing..." → Jump to Step 9.`,
+    9]}],
+
+[7,'Deflect Rejection','Acknowledge fully — pivot to one undeniable truth',
+`"I totally understand. And I'm not asking you to make any final decision right now.
+What I am asking is that you focus on just one thing: [Core value in one single sentence].
+Doesn't that make sense?"
+
+[3-Step Deflect: 1. Acknowledge sincerely — don't fake it.
+ 2. Reframe to one undeniable truth they already agreed to.
+ 3. Re-close on that single truth. Never fight the objection head-on.]`,
+{g:[`"Yeah, I guess that makes sense"`,
+    `Re-close while they're agreeable.\n\n"Right. And that's the whole point of moving forward. So let's do this — [re-close]." → Step 6.`,
+    6],
+ y:[`"Kind of, but I still..."`,
+    `Stack more value with a new angle.\n\nIntroduce a new logical proof point or a new emotional anchor you haven't used yet. Do not repeat yourself. → Step 8.`,
+    8],
+ o:[`"I just need more time"`,
+    `The time objection.\n\n"Time for what, specifically? Because the information you have right now is the exact same information you'll have in a week — or a month. What actually changes?"\n\nIf they can't answer → "Then there's really no reason to wait, is there?" → Step 6.`,
+    6],
+ r:[`"I'm just not interested"`,
+    `Pattern interrupt.\n\n"You might be right — this might genuinely not be for you. But let me ask you something: [their specific stated pain]. Is that still a real issue for you?"\n\nGet them back to their pain → re-engage → Step 8.`,
+    8],
+ p:[`"Stop pushing me"`,
+    `Full acknowledgment — back off completely.\n\n"You're right — I apologize. The last thing I want is to pressure anyone. Here's what I'll do: I'll send you [something genuinely useful], and if it resonates, you'll know exactly how to reach me."\n\nExit gracefully. Leave the door wide open.`,
+    null]}],
+
+[8,'Looping','New angle every single time — never repeat, always escalate',
+`"Here's what I keep coming back to, [Name].
+[NEW logical proof OR new emotional anchor — never the same element as before].
+If I could show you [specific, measurable outcome], would that change how you're looking at this?"
+
+[The Loop Rule: Every loop MUST introduce something genuinely new.
+ New logical proof. New case study. New emotional anchor. New angle on the risk of inaction.
+ If you repeat yourself, you lose. Escalate the value with every single pass.]`,
+{g:[`"Maybe, possibly"`,
+    `Re-close now — don't wait.\n\n"Good. Then let's do this: [close]. You're not committing to anything other than getting started and seeing it work." → Step 6.`,
+    6],
+ y:[`"Depends on the details"`,
+    `Handle the condition exactly as stated.\n\n"What details specifically?" → Address exactly what they said → Re-close. → Step 6.`,
+    6],
+ o:[`"I just don't know"`,
+    `Decision clarity question.\n\n"What would need to be true for this to be an obvious yes for you? Tell me exactly." → Listen → Build to that specific thing → Re-close. → Step 6.`,
+    6],
+ r:[`"I already told you no"`,
+    `Last attempt — with complete respect.\n\n"I hear you — and I promise this is the last thing I'll say. The one thing I want you to sit with is this: [Most powerful emotional anchor you have]. My contact is [X]. If anything changes, I would genuinely love to hear from you."\n\nExit cleanly.`,
+    null],
+ p:[`"I'm done talking"`,
+    `Graceful, professional exit.\n\n"I completely respect that. Take care of yourself."\n\nEnd the call with full composure. Log result. Never burn a bridge. → Step 12.`,
+    12]}],
+
+[9,'Lower Action Threshold','Shrink the ask — make the first yes feel tiny',
+`"Here's what I'd suggest instead — rather than the full commitment right now,
+let's start with [smallest possible entry: trial / pilot / smaller package / free assessment].
+You get in, you see the value firsthand, and you have all the information you need
+to make the real decision. Doesn't that seem fair?"
+
+[Lower the risk. Reduce the commitment. Make it easy to say yes to SOMETHING.
+ A small yes creates momentum. Momentum creates the bigger yes.]`,
+{g:[`"Yeah, that works for me"`,
+    `Lock it immediately.\n\n"Perfect. Let's get you set up with [the smaller thing] right now." → Cement it → Step 11.`,
+    null],
+ y:[`"What does that look like exactly"`,
+    `Detail the micro-commitment completely.\n\nWalk through exactly what they get, what it costs, what they commit to, and how they exit if they want to. Make it concrete and zero-risk. → Re-close → Step 11.`,
+    11],
+ o:[`"Still seems like a lot"`,
+    `Even smaller step.\n\n"Okay — what if we did [the absolute smallest possible thing]? Just enough to see if this is even a conversation worth having." → Re-close on that.`,
+    9],
+ r:[`"I'm not doing anything right now"`,
+    `Timeline question.\n\n"When would 'right now' become 'the right time' for you? What needs to happen first?" → Get specific → Address that specific thing → Re-close with a concrete timeline. → Step 10.`,
+    10],
+ p:[`"Nothing you say will change my mind"`,
+    `Graceful, no-pressure exit.\n\n"I completely respect that — I won't push further. I'll send you [something genuinely useful] with no strings. If your situation changes, you know where to find me."\n\nLog it → Step 12.`,
+    12]}],
+
+[10,'Lower Pain Threshold','Surface the cost of inaction — make staying still unacceptable',
+`"Let me ask you something honest, [Name].
+What's it actually costing you right now to NOT have [solution]?
+Because from what you told me — [their specific stated pain] — every [week/month/quarter]
+you don't address this, that's [specific cost: dollars lost, time wasted, stress, opportunity gone].
+Does that concern you at all?"
+
+[Future-pace the pain. Not manipulation — they told you their pain.
+ You're simply making the cost of inaction vivid and immediate.
+ The status quo must become unacceptable.]`,
+{g:[`"You're right, it does bother me"`,
+    `Re-close with urgency — don't let the moment pass.\n\n"Then there's really no reason to keep absorbing that, is there? Let's get you started today." → Step 6.`,
+    6],
+ y:[`"A little, yeah"`,
+    `Amplify the pain.\n\n"A little — or a lot, if you're being truly honest with yourself? How long can you realistically keep absorbing [that specific cost]?"\n\nLet the question sit. Then re-close. → Step 6.`,
+    6],
+ o:[`"I manage fine"`,
+    `Surface the deeper, unstated pain.\n\n"You manage — absolutely. But there's a difference between managing and actually solving it. If you could flip a switch and [the outcome they said they want], would you?"\n\n"Then the question isn't whether you want this — it's whether right now is the time." → Step 9.`,
+    9],
+ r:[`"I'll deal with it later"`,
+    `Future-pace.\n\n"'Later.' Okay — what does later look like? I'll tell you what I hear consistently: people who wait six months tell me they wish they'd moved six months ago. Every single time. That's all I've got." → Re-close. → Step 6.`,
+    6],
+ p:[`"That's my problem, not yours"`,
+    `Empathy + graceful exit.\n\n"You're completely right — it is. I just hate seeing sharp people keep absorbing costs they don't have to. That's the only reason I pushed. My contact is at [channel]. If anything changes."\n\nExit with genuine warmth.`,
+    null]}],
+
+[11,'Cement the Sale','Kill buyer\'s remorse before it has a chance to form',
+`"You made a great decision. I mean that sincerely.
+Here's what I want you to hold onto: [#1 reason they bought — use THEIR words, their frame].
+A lot of people have this moment right after they commit where they start second-guessing.
+That's completely normal. But you did the right thing.
+And I'm personally going to make sure you see that."
+
+[Cement IMMEDIATELY after the yes. This step is non-negotiable.
+ Buyer's remorse kills deals in the hour after close. Don't let them get there alone.]`,
+{g:[`"Great, let's do it"`,
+    `Smooth transition.\n\nReinforce once, quickly and confidently. Then move directly to Step 12 to set crystal-clear expectations and eliminate any chance of ghosting.`,
+    null],
+ y:[`"I hope I'm doing the right thing"`,
+    `Reassurance — be specific, not generic.\n\n"You are — and here's why I can say that with confidence: [specific proof: a result, a guarantee, a client story]. You're going to look back on this call as one of the better decisions you made this year." → Step 12.`,
+    null],
+ o:[`"Should I really be doing this"`,
+    `Recommit to the logic.\n\n"Ask yourself this: the reason you said yes was [their specific stated reason]. Has anything about that changed in the last five minutes? No. You're not second-guessing the decision — you're second-guessing the feeling. Trust the logic that got you here." → Step 12.`,
+    null],
+ r:[`"Actually, wait a second..."`,
+    `Handle the reversal immediately — do not panic.\n\n"Talk to me — what's coming up?" → Listen completely without interrupting. Address the specific thing. Recommit to it.\n\nDo NOT let them off the hook without fully understanding and addressing the real objection. → Loop to Step 7 if needed.`,
+    7],
+ p:[`"I changed my mind"`,
+    `Hard reversal — stay composed.\n\n"Before we reverse course, help me understand: what specifically changed? Because five minutes ago, [the exact reason they agreed] made complete sense to you. What's different right now?"\n\nIf it's addressable → re-cement it. If it's not → handle it gracefully and don't burn the bridge. → Step 7.`,
+    7]}],
+
+[12,'Clarify Next Steps','Set exact expectations — prevent ghosting, create accountability',
+`"Here's exactly what happens from here:
+[Next action + specific timeframe]. [What they'll receive + exactly when].
+[When we speak next + what that call covers]. And if anything comes up before then —
+here's how to reach me directly: [Your direct contact].
+Any questions at all before we wrap up?"
+
+[Be crystal clear on every single next step. Ambiguity creates ghosting.
+ Specificity creates accountability. Make the next contact feel already scheduled.
+ The call isn't over until expectations are perfectly set.]`,
+{g:[`"Nope, all good"`,
+    `Perfect close.\n\n"Excellent. You're going to love this. Talk [specific next contact date]."\n\nLog the call. Update your CRM. Note specifically what worked and what color sequence got you here.`,
+    null],
+ y:[`"Just one quick question..."`,
+    `Handle the final question completely — give it your full attention.\n\nThis is your last impression. A thorough answer here cements confidence. Then re-confirm all next steps clearly.`,
+    12],
+ o:[`"How do I cancel if..."`,
+    `Reassurance — zero defensiveness.\n\n"Here's exactly how that works: [the cancellation or exit process, step by step]. No games, no hidden steps. I'd rather you know that upfront than ever feel trapped." → Recommit to the relationship.`,
+    null],
+ r:[`"I have some concerns about..."`,
+    `Re-cement. Take each concern with complete seriousness.\n\n"I'm glad you're raising these now rather than sitting with them. Let's handle each one."\n\nAddress them one at a time. → Step 11 to re-cement if needed.`,
+    11],
+ p:[`"I'm not sure about this anymore"`,
+    `Hard buyer's remorse — slow it down.\n\n"Let's slow down for a second. What specifically are you not sure about?" → Address each item patiently.\n\nIf they're firm: "Here's what I'd like you to do: sleep on it tonight. I'll call you tomorrow at [specific time]. If you still want to reverse course, I'll absolutely respect that."\n\nBuy 24 hours. Recommit tomorrow. → Step 11.`,
+    11]}]
+];
+
+let cur=1, sel={}, done=new Set(), openSet=new Set([1]), log=[], t0=Date.now();
+
+function render(){
+  document.getElementById('slist').innerHTML=S.map(renderStep).join('');
+  document.getElementById('hstep').textContent=cur+' / 12';
+  document.getElementById('prog-bar').style.width=(cur/12*100)+'%';
+  renderLog();
+}
+
+function renderStep([id,name,sub,script,resp]){
+  const isCur=cur===id, isDone=done.has(id), isOpen=openSet.has(id);
+  const selKey=sel[id];
+  const dots=CKS.map(k=>`<div class="dot${selKey===k?' hit':''}" style="background:${CM[k].bc};"></div>`).join('');
+  const cbtnRow=CKS.map(k=>{
+    const c=CM[k];
+    const [word]=resp[k];
+    const isSel=selKey===k;
+    return `<button class="cbtn${isSel?' sel':''}" onclick="pickColor(${id},'${k}')"
+      style="background:${c.bg};color:${c.cl};${isSel?'border-color:'+c.bc:''}">
+      <span class="clabel">${c.l}</span>
+      <span class="cword">${word}</span>
+    </button>`;
+  }).join('');
+  let handlerHtml='';
+  if(selKey){
+    const c=CM[selKey];
+    const [,handler,loopTo]=resp[selKey];
+    let acts='';
+    if(loopTo!==null){
+      acts+=`<button class="abtn loop" onclick="jumpTo(${loopTo})">↩ Loop back to Step ${loopTo}: ${S[loopTo-1][1]}</button>`;
+    }
+    if(loopTo===null&&id<12){
+      acts+=`<button class="abtn adv" onclick="advance(${id})">→ Continue to Step ${id+1}: ${S[id][1]}</button>`;
+    }
+    if(id===12&&loopTo===null){
+      acts+=`<button class="abtn done-btn" onclick="newSession()">✓ Call complete — start new session</button>`;
+    }
+    handlerHtml=`<div class="hbox" style="border-left-color:${c.bc};">
+      <div class="htext">${handler.replace(/\n/g,'<br>')}</div>
+      <div class="hacts">${acts}</div>
+    </div>`;
+  }
+  const navHtml=`<div class="nbar">
+    ${id>1?`<button class="nbtn" onclick="jumpTo(${id-1})">← Back</button>`:'<span></span>'}
+    <span style="font-size:11px;color:var(--muted);margin:0 auto;">Step ${id} of 12</span>
+    <button class="nbtn prime" onclick="advance(${id})">${id<12?'Continue →':'Complete Call ✓'}</button>
+  </div>`;
+  const cls=['sc',isCur?'cur':'',isDone?'done':'',isOpen?'open':''].filter(Boolean).join(' ');
+  const numDisp=isDone?'✓':String(id).padStart(2,'0');
+  return `<div class="${cls}" id="sc${id}">
+    <div class="sh" onclick="toggle(${id})">
+      <span class="snum">${numDisp}</span>
+      <div class="smeta">
+        <div class="sname">${name}</div>
+        <div class="ssub">${sub}</div>
+      </div>
+      <div class="sdots">${dots}</div>
+      <span class="chev">▾</span>
+    </div>
+    <div class="sbody">
+      <div class="slabel">Script</div>
+      <div class="sblock">${script}</div>
+      <div class="slabel" style="margin-bottom:8px;">Prospect Response — Click their reaction</div>
+      <div class="crow">${cbtnRow}</div>
+      ${handlerHtml}
+      ${navHtml}
+    </div>
+  </div>`;
+}
+
+function renderLog(){
+  const wrap=document.getElementById('log-wrap');
+  const list=document.getElementById('log-list');
+  if(log.length===0){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  list.innerHTML=log.map(e=>{
+    const c=CM[e.ck];
+    return `<div class="log-item">
+      <span class="log-step">${String(e.step).padStart(2,'0')}</span>
+      <div class="log-color" style="background:${c.bc};"></div>
+      <span class="log-name">${S[e.step-1][1]}</span>
+      <span style="font-size:11px;color:${c.cl};">${c.l}</span>
+      <span class="log-outcome">${e.word}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggle(id){
+  if(openSet.has(id)) openSet.delete(id); else openSet.add(id);
+  render();
+}
+
+function pickColor(id,ck){
+  const prev=sel[id];
+  if(prev===ck){sel[id]=undefined;render();return;}
+  sel[id]=ck;
+  const [word,handler,loopTo]=S[id-1][4][ck];
+  if(loopTo===null&&id<12) done.add(id);
+  if(!log.find(e=>e.step===id&&e.ck===ck)){
+    log.push({step:id,ck,word});
+  }
+  openSet.add(id);
+  render();
+  setTimeout(()=>{
+    const el=document.getElementById('sc'+id);
+    const hb=el.querySelector('.hbox');
+    if(hb) hb.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },60);
+}
+
+function advance(id){
+  done.add(id);
+  openSet.delete(id);
+  if(id<12){
+    cur=id+1;
+    sel[cur]=undefined;
+    openSet.add(cur);
+    render();
+    setTimeout(()=>{
+      const el=document.getElementById('sc'+cur);
+      if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    },60);
+  } else {
+    cur=12;
+    render();
+  }
+}
+
+function jumpTo(id){
+  cur=id;
+  sel[id]=undefined;
+  openSet.add(id);
+  render();
+  setTimeout(()=>{
+    const el=document.getElementById('sc'+id);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },60);
+}
+
+function newSession(){
+  cur=1;sel={};done=new Set();openSet=new Set([1]);log=[];t0=Date.now();
+  render();
+  setTimeout(()=>{
+    const el=document.getElementById('sc1');
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },60);
+}
+
+setInterval(()=>{
+  const el=document.getElementById('htimer');
+  if(!el) return;
+  const s=Math.floor((Date.now()-t0)/1000);
+  el.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60);
+},1000);
+
+render();
+</script>
+</body>
+</html>

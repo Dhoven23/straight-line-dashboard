@@ -7,12 +7,19 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#060606;--card:#0e0e0e;--card-cur:#0f1929;--border:#1e1e1e;--border-cur:#1d4ed8;
-  --text:#e2e8f0;--muted:#6b7280;--dim:#374151;--faint:#1a1a1a;
+  --bg:#080808;--card:#141414;--card-cur:#0f1929;--border:#2a2a2a;--border-cur:#1d4ed8;
+  --text:#f1f5f9;--muted:#8b95a3;--dim:#4b5563;--faint:#1c1c1c;
   --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.12);
   --green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;
   --ui:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --mono:'Courier New',Courier,monospace;
+
+  /* ── Tonality palette — distinct from response colors ── */
+  --tone-assertive: #60a5fa;   /* sky blue  — steps 1, 5, 6  */
+  --tone-curious:   #67e8f9;   /* cyan      — step 2         */
+  --tone-concerned: #fb7185;   /* rose      — steps 3, 7, 10, 11 */
+  --tone-neutral:   #94a3b8;   /* slate     — steps 4, 12    */
+  --tone-upbeat:    #818cf8;   /* indigo    — steps 8, 9     */
 }
 body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100vh;font-size:14px;}
 
@@ -35,20 +42,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100
 #main{max-width:900px;margin:0 auto;padding:20px 16px 80px;}
 
 /* ── Step Cards ── */
-.sc{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .2s,background .2s;}
-.sc.cur{border-color:var(--border-cur);background:var(--card-cur);}
-.sc.done{opacity:0.5;}
-.sc.done:hover{opacity:0.75;}
+.sc{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-left-width:4px;        /* tonality border — color set inline */
+  border-radius:10px;
+  margin-bottom:10px;
+  overflow:hidden;
+  transition:border-color .2s,background .2s,opacity .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
+}
+.sc.cur{border-color:var(--border-cur);border-left-color:inherit;background:var(--card-cur);box-shadow:0 4px 20px rgba(0,0,0,0.7);}
+/* cur overrides the right/top/bottom to blue but we preserve left via JS inline style */
+.sc.done{opacity:0.35;}
+.sc.done:hover{opacity:0.6;}
 
 /* ── Step Header ── */
-.sh{display:flex;align-items:center;gap:14px;padding:13px 18px;cursor:pointer;user-select:none;}
-.sh:hover{background:rgba(255,255,255,0.02);}
+.sh{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none;}
+.sh:hover{background:rgba(255,255,255,0.04);}
 .snum{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--dim);min-width:32px;line-height:1;letter-spacing:-0.02em;}
 .sc.cur .snum{color:var(--amber);}
 .sc.done .snum{color:var(--green);font-size:18px;}
 .smeta{flex:1;min-width:0;}
-.sname{font-size:14px;font-weight:600;margin-bottom:2px;}
+.sname{font-size:14px;font-weight:600;margin-bottom:3px;}
+.smeta-bottom{display:flex;align-items:center;gap:8px;}
 .ssub{font-size:11px;color:var(--muted);line-height:1.3;}
+/* tone word on collapsed card */
+.stone-tag{font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:0.75;white-space:nowrap;}
 .sdots{display:flex;gap:5px;flex-shrink:0;}
 .dot{width:8px;height:8px;border-radius:50%;opacity:0.18;}
 .dot.hit{opacity:1;}
@@ -59,13 +79,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100
 .sbody{display:none;padding:0 18px 18px;}
 .sc.open .sbody{display:block;}
 
+/* ── Tonality block — top of expanded card ── */
+.tblock{
+  border-left:3px solid;
+  border-radius:0 6px 6px 0;
+  padding:10px 14px;
+  margin-bottom:16px;
+  background:rgba(255,255,255,0.025);
+}
+.tblock-primary{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;}
+.tblock-cue{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:3px;}
+.tblock-avoid{font-size:11px;color:var(--muted);line-height:1.4;}
+.tblock-avoid::before{content:'Avoid: ';font-weight:600;}
+
 /* ── Script block ── */
 .slabel{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;font-weight:600;}
 .sblock{background:#070707;border:1px solid var(--border);border-radius:6px;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.8;white-space:pre-wrap;color:#c9d1d9;margin-bottom:16px;}
 
 /* ── Color Buttons ── */
 .crow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;}
-.cbtn{border:none;border-radius:7px;padding:10px 4px;cursor:pointer;text-align:center;transition:transform .1s,box-shadow .1s;border:2px solid transparent;}
+.cbtn{border:2px solid transparent;border-radius:7px;padding:10px 4px;cursor:pointer;text-align:center;transition:transform .1s;}
 .cbtn:active{transform:scale(0.96);}
 .cbtn.sel{border-color:currentColor;}
 .clabel{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;}
@@ -73,7 +106,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100
 
 /* ── Handler ── */
 .hbox{border-left:3px solid;border-radius:0 6px 6px 0;padding:14px 16px;font-size:13.5px;line-height:1.75;margin:8px 0 14px;background:rgba(255,255,255,0.025);}
-.htext{}
 .hacts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
 .abtn{background:none;border:1px solid;border-radius:5px;padding:6px 13px;font-size:12px;cursor:pointer;font-family:var(--ui);transition:background .15s;}
 .abtn:hover{background:rgba(255,255,255,0.06);}
@@ -126,6 +158,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100
 </div>
 
 <script>
+// ── Response colors ──
 const CM={
   g:{l:'HOT',   bg:'rgba(34,197,94,0.13)', cl:'#4ade80', bc:'#22c55e'},
   y:{l:'WARM',  bg:'rgba(234,179,8,0.13)', cl:'#facc15', bc:'#eab308'},
@@ -135,6 +168,18 @@ const CM={
 };
 const CKS=['g','y','o','r','p'];
 
+// ── Tonality families ──
+// Distinct from response colors — these are internal states, not prospect signals
+const TM={
+  assertive: { color:'#60a5fa', label:'Assertive' },
+  curious:   { color:'#67e8f9', label:'Curious'   },
+  concerned: { color:'#fb7185', label:'Concerned' },
+  neutral:   { color:'#94a3b8', label:'Neutral'   },
+  upbeat:    { color:'#818cf8', label:'Upbeat'    },
+};
+
+// S = [id, name, subtitle, script, responses, tone]
+// tone = { family, cue, avoid }
 const S=[
 
 [1,'Immediate Control','Seize the frame — own every second from hello',
@@ -156,7 +201,8 @@ const S=[
     1],
  p:[`"Remove me from your list"`,
     `Absolute respect — plant a seed.\n\n"Absolutely, I'll take care of that right now. Before I do — is it the timing, or is [category] genuinely off the table for you right now?"\n\nIf they answer → re-engage. If they hang up → move on.`,
-    null]}],
+    null]},
+{family:'assertive', cue:'You are the expert. You have something they need. Own the call from the first word.', avoid:"Never sound like you're asking permission to talk."}],
 
 [2,'Gather Intelligence','Listen 80%, talk 20% — find the pain, the goal, the gap',
 `"Quick question before I go any further — just so I'm not wasting your time:
@@ -179,7 +225,8 @@ What's working, what's not?"
     2],
  p:[`"Just tell me what you're selling"`,
     `One critical question, then proceed.\n\n"Absolutely — getting there. Just one thing first so I can make this relevant: [most critical Q]?"\n\nUse their answer as a bridge. Skip to Step 5 if they refuse to engage further.`,
-    null]}],
+    null]},
+{family:'curious', cue:"You're a doctor gathering symptoms — genuinely interested in their specific situation.", avoid:"Don't rush through questions. Every answer is leverage you'll use in the pitch."}],
 
 [3,'Develop Rapport','Make them feel heard — mirror, match, find the connection',
 `"That makes total sense. You know, I work with a lot of people in your exact situation,
@@ -201,7 +248,8 @@ and what I keep hearing is [shared pain]. Does that sound familiar?"
     null],
  p:[`Cold, giving nothing`,
     `Direct value hook, no fluff.\n\n"Look — I get it. Here's the honest version in 20 seconds: [What you do, who it's for, what changes for them]. Worth 60 more seconds?"\n\nStep 4 if yes. Close the call gracefully if no.`,
-    null]}],
+    null]},
+{family:'concerned', cue:'You actually care what happens to their family. Let that be real — not performed.', avoid:"Don't fake warmth. Use their name and reference exactly what they told you."}],
 
 [4,'Transition','Bridge from their world to your solution — get the micro-yes',
 `"Based on everything you've shared with me, [Name], I think I can genuinely help you.
@@ -224,7 +272,8 @@ Is that cool?"
     4],
  p:[`"Just send me an email"`,
     `Address it directly.\n\n"I will — and I want to. But what I'm about to share makes a lot more sense in a two-minute conversation than any email can convey. Can I just cover the key points?"\n\nYes → Step 5. No → get their email + schedule a call.`,
-    null]}],
+    null]},
+{family:'neutral', cue:'This is just what happens next. Smooth, frictionless, obvious.', avoid:'No extra energy. Calm transitions close more than enthusiastic ones.'}],
 
 [5,'Give Presentation','Logic first, emotion second, certainty of company third',
 `"Here's what [Product] does: [Logical benefit 1], [Logical benefit 2], [Logical benefit 3].
@@ -243,11 +292,12 @@ And the company behind all of this has [credibility proof: years, clients, speci
     `Mechanism explanation.\n\n"The basic mechanics are: [Step 1] → [Step 2] → [Step 3]. Pretty simple. The part most people are surprised by is [the most impressive element of the process]." → Step 6.`,
     5],
  r:[`"Sounds expensive"`,
-    `Value stack before price — always.\n\n"Before we even talk price, make sure you understand what you're actually getting: [Stack 3 specific benefits]. Most clients see [specific result]. When you think about it that way, the question isn't what it costs — it's what it's worth to you." → Step 6.`,
-    5],
+    `Lost them on value — the rapport foundation wasn't solid enough to hold the price.\n\n"You're right to push back on that. Let me back up for a second — I don't think I made this real enough for your specific situation. Tell me again: [restate their exact pain from Step 2]."\n\nRebuild the emotional case from Step 3 before you re-pitch.`,
+    3],
  p:[`"I need to think about it"`,
-    `Isolate: think about WHAT exactly?\n\n"Absolutely. What specifically do you want to think about? If it's [objection A], I can address that right now. Or is it [objection B]?"\n\nIdentify the real block → loop to the relevant step.`,
-    7]}],
+    `Closed down during the pitch — they heard the words but weren't bought in.\n\n"Absolutely. Before you do — help me understand something. When you filled out that form, what was going on that made you want to look into this?"\n\nGet them back to their own WHY. Rebuild from rapport.`,
+    3]},
+{family:'assertive', cue:'Slow down. Every point lands heavier when you give it space. You know this cold.', avoid:"Don't rush to the numbers. Build certainty in the company before you quote anything."}],
 
 [6,'Ask for the Order','Assume the sale — ask HOW, never IF',
 `"Here's what I want to do — let's get you started with [product/plan].
@@ -269,8 +319,9 @@ Does [payment option A] work for you, or would you prefer [payment option B]?"
     `Loop to deflect sequence.\n\n"Completely understand. Can I ask — what would need to be different for this to make sense for you right now?" → Listen → Step 7.`,
     7],
  p:[`"Absolutely not"`,
-    `Don't fight nuclear resistance. Lower the threshold completely.\n\n"Fair enough. Here's what I'd suggest instead of the full thing..." → Jump to Step 9.`,
-    9]}],
+    `Total shutdown at the close means rapport broke somewhere before the pitch.\n\n"I hear you — and I'm not going to push. Before I let you go, can I just ask: what would have needed to be different about this conversation for it to feel right?"\n\nListen. Whatever they say is the thing you missed. Go back to Step 3 and rebuild from there.`,
+    3]},
+{family:'assertive', cue:"You already know they're saying yes. This is just logistics.", avoid:`Don't say "does that sound good?" — that's a question. State, don't ask. Then hold the silence.`}],
 
 [7,'Deflect Rejection','Acknowledge fully — pivot to one undeniable truth',
 `"I totally understand. And I'm not asking you to make any final decision right now.
@@ -294,7 +345,8 @@ Doesn't that make sense?"
     8],
  p:[`"Stop pushing me"`,
     `Full acknowledgment — back off completely.\n\n"You're right — I apologize. The last thing I want is to pressure anyone. Here's what I'll do: I'll send you [something genuinely useful], and if it resonates, you'll know exactly how to reach me."\n\nExit gracefully. Leave the door wide open.`,
-    null]}],
+    null]},
+{family:'concerned', cue:'Acknowledge fully before you redirect. They need to feel heard before they will move.', avoid:'Never fight the objection head-on. Agree first, then reframe.'}],
 
 [8,'Looping','New angle every single time — never repeat, always escalate',
 `"Here's what I keep coming back to, [Name].
@@ -318,7 +370,8 @@ If I could show you [specific, measurable outcome], would that change how you're
     null],
  p:[`"I'm done talking"`,
     `Graceful, professional exit.\n\n"I completely respect that. Take care of yourself."\n\nEnd the call with full composure. Log result. Never burn a bridge. → Step 12.`,
-    12]}],
+    12]},
+{family:'upbeat', cue:'Every loop is a fresh start. New angle, new energy — like you just thought of something great.', avoid:'Repeating yourself with more intensity is not a loop. They can feel the difference.'}],
 
 [9,'Lower Action Threshold','Shrink the ask — make the first yes feel tiny',
 `"Here's what I'd suggest instead — rather than the full commitment right now,
@@ -342,7 +395,8 @@ to make the real decision. Doesn't that seem fair?"
     10],
  p:[`"Nothing you say will change my mind"`,
     `Graceful, no-pressure exit.\n\n"I completely respect that — I won't push further. I'll send you [something genuinely useful] with no strings. If your situation changes, you know where to find me."\n\nLog it → Step 12.`,
-    12]}],
+    12]},
+{family:'upbeat', cue:"Light touch. We're just seeing if they qualify — no big deal, no pressure, no stakes.", avoid:"Don't signal that you're backing down. Lower the ask naturally, not apologetically."}],
 
 [10,'Lower Pain Threshold','Surface the cost of inaction — make staying still unacceptable',
 `"Let me ask you something honest, [Name].
@@ -368,7 +422,8 @@ Does that concern you at all?"
     6],
  p:[`"That's my problem, not yours"`,
     `Empathy + graceful exit.\n\n"You're completely right — it is. I just hate seeing sharp people keep absorbing costs they don't have to. That's the only reason I pushed. My contact is at [channel]. If anything changes."\n\nExit with genuine warmth.`,
-    null]}],
+    null]},
+{family:'concerned', cue:"You've seen what happens to families without a plan. Let that genuine weight come through.", avoid:"Don't manufacture urgency. Use the real numbers they gave you in Step 2."}],
 
 [11,'Cement the Sale','Kill buyer\'s remorse before it has a chance to form',
 `"You made a great decision. I mean that sincerely.
@@ -393,7 +448,8 @@ And I'm personally going to make sure you see that."
     7],
  p:[`"I changed my mind"`,
     `Hard reversal — stay composed.\n\n"Before we reverse course, help me understand: what specifically changed? Because five minutes ago, [the exact reason they agreed] made complete sense to you. What's different right now?"\n\nIf it's addressable → re-cement it. If it's not → handle it gracefully and don't burn the bridge. → Step 7.`,
-    7]}],
+    7]},
+{family:'concerned', cue:"They made the right call. You genuinely believe that. Say it like you mean it.", avoid:"Don't keep selling. The sale is done. Cementing is reassurance, not pitch."}],
 
 [12,'Clarify Next Steps','Set exact expectations — prevent ghosting, create accountability',
 `"Here's exactly what happens from here:
@@ -419,11 +475,14 @@ Any questions at all before we wrap up?"
     11],
  p:[`"I'm not sure about this anymore"`,
     `Hard buyer's remorse — slow it down.\n\n"Let's slow down for a second. What specifically are you not sure about?" → Address each item patiently.\n\nIf they're firm: "Here's what I'd like you to do: sleep on it tonight. I'll call you tomorrow at [specific time]. If you still want to reverse course, I'll absolutely respect that."\n\nBuy 24 hours. Recommit tomorrow. → Step 11.`,
-    11]}]
+    11]},
+{family:'neutral', cue:'Organized, specific, unhurried. You have done this a hundred times.', avoid:'Ambiguity creates ghosting. Every next step needs a specific time attached to it.'}]
 ];
 
+// ── State ──
 let cur=1, sel={}, done=new Set(), openSet=new Set([1]), log=[], t0=Date.now();
 
+// ── Render ──
 function render(){
   document.getElementById('slist').innerHTML=S.map(renderStep).join('');
   document.getElementById('hstep').textContent=cur+' / 12';
@@ -431,10 +490,16 @@ function render(){
   renderLog();
 }
 
-function renderStep([id,name,sub,script,resp]){
+function renderStep([id,name,sub,script,resp,tone]){
   const isCur=cur===id, isDone=done.has(id), isOpen=openSet.has(id);
   const selKey=sel[id];
+  const tm=TM[tone.family];
+  const tc=tm.color;
+
+  // dots
   const dots=CKS.map(k=>`<div class="dot${selKey===k?' hit':''}" style="background:${CM[k].bc};"></div>`).join('');
+
+  // color buttons
   const cbtnRow=CKS.map(k=>{
     const c=CM[k];
     const [word]=resp[k];
@@ -445,6 +510,15 @@ function renderStep([id,name,sub,script,resp]){
       <span class="cword">${word}</span>
     </button>`;
   }).join('');
+
+  // tonality block (shown when expanded)
+  const toneHtml=`<div class="tblock" style="border-left-color:${tc};">
+    <div class="tblock-primary" style="color:${tc};">${tm.label}</div>
+    <div class="tblock-cue">${tone.cue}</div>
+    <div class="tblock-avoid">${tone.avoid}</div>
+  </div>`;
+
+  // handler
   let handlerHtml='';
   if(selKey){
     const c=CM[selKey];
@@ -464,24 +538,32 @@ function renderStep([id,name,sub,script,resp]){
       <div class="hacts">${acts}</div>
     </div>`;
   }
+
+  // nav
   const navHtml=`<div class="nbar">
     ${id>1?`<button class="nbtn" onclick="jumpTo(${id-1})">← Back</button>`:'<span></span>'}
     <span style="font-size:11px;color:var(--muted);margin:0 auto;">Step ${id} of 12</span>
     <button class="nbtn prime" onclick="advance(${id})">${id<12?'Continue →':'Complete Call ✓'}</button>
   </div>`;
+
   const cls=['sc',isCur?'cur':'',isDone?'done':'',isOpen?'open':''].filter(Boolean).join(' ');
   const numDisp=isDone?'✓':String(id).padStart(2,'0');
-  return `<div class="${cls}" id="sc${id}">
+
+  return `<div class="${cls}" id="sc${id}" style="border-left-color:${tc};">
     <div class="sh" onclick="toggle(${id})">
       <span class="snum">${numDisp}</span>
       <div class="smeta">
         <div class="sname">${name}</div>
-        <div class="ssub">${sub}</div>
+        <div class="smeta-bottom">
+          <span class="ssub">${sub}</span>
+          <span class="stone-tag" style="color:${tc};">${tm.label}</span>
+        </div>
       </div>
       <div class="sdots">${dots}</div>
       <span class="chev">▾</span>
     </div>
     <div class="sbody">
+      ${toneHtml}
       <div class="slabel">Script</div>
       <div class="sblock">${script}</div>
       <div class="slabel" style="margin-bottom:8px;">Prospect Response — Click their reaction</div>
@@ -509,8 +591,14 @@ function renderLog(){
   }).join('');
 }
 
+// ── Actions ──
 function toggle(id){
-  if(openSet.has(id)) openSet.delete(id); else openSet.add(id);
+  if(openSet.has(id)){
+    openSet.delete(id);
+  } else {
+    openSet.clear();
+    openSet.add(id);
+  }
   render();
 }
 
@@ -534,10 +622,10 @@ function pickColor(id,ck){
 
 function advance(id){
   done.add(id);
-  openSet.delete(id);
   if(id<12){
     cur=id+1;
     sel[cur]=undefined;
+    openSet.clear();
     openSet.add(cur);
     render();
     setTimeout(()=>{
@@ -546,6 +634,7 @@ function advance(id){
     },60);
   } else {
     cur=12;
+    openSet.clear();
     render();
   }
 }
@@ -553,6 +642,7 @@ function advance(id){
 function jumpTo(id){
   cur=id;
   sel[id]=undefined;
+  openSet.clear();
   openSet.add(id);
   render();
   setTimeout(()=>{
@@ -562,7 +652,7 @@ function jumpTo(id){
 }
 
 function newSession(){
-  cur=1;sel={};done=new Set();openSet=new Set([1]);log=[];t0=Date.now();
+  cur=1;sel={};done=new Set();openSet.clear();openSet.add(1);log=[];t0=Date.now();
   render();
   setTimeout(()=>{
     const el=document.getElementById('sc1');
@@ -570,6 +660,7 @@ function newSession(){
   },60);
 }
 
+// ── Timer ──
 setInterval(()=>{
   const el=document.getElementById('htimer');
   if(!el) return;

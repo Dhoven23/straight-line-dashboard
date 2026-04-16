@@ -92,9 +92,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100
 .tblock-avoid{font-size:11px;color:var(--muted);line-height:1.4;}
 .tblock-avoid::before{content:'Avoid: ';font-weight:600;}
 
-/* ── Script block ── */
-.slabel{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;font-weight:600;}
-.sblock{background:#070707;border:1px solid var(--border);border-radius:6px;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.8;white-space:pre-wrap;color:#c9d1d9;margin-bottom:16px;}
+/* ── Items list ── */
+.items-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+.igroup{font-size:9.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:700;margin:10px 0 2px;padding-left:2px;}
+.igroup:first-child{margin-top:0;}
+.item{padding:10px 15px;font-size:13.5px;line-height:1.55;background:#1c1c1c;border:1px solid #303030;color:var(--text);cursor:default;}
+.item-q{border-radius:22px;}
+.item-s{border-radius:4px;color:#c9d1d9;}
 
 /* ── Color Buttons ── */
 .crow{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;}
@@ -178,15 +182,21 @@ const TM={
   upbeat:    { color:'#818cf8', label:'Upbeat'    },
 };
 
-// S = [id, name, subtitle, script, responses, tone]
-// tone = { family, cue, avoid }
+// S = [id, name, subtitle, items, responses, tone]
+// items: { type: 'q'|'s'|'group', text }
+// q = question (rounded), s = statement (square), group = label only
 const S=[
 
 [1,'Immediate Control','Seize the frame — own every second from hello',
-`"Hey [Name], it's [You] with [Company] — did I catch you at a terrible time?"
-
-[Project absolute certainty. You are the expert. This call is a gift to them.
- Match their energy — then elevate it. Pace, then lead.]`,
+[
+  {type:'q', text:'"Hi, [Name]?"'},
+  {type:'q', text:'"Hey [Name], it\'s Conrad — how are we doing today?"'},
+  {type:'q', text:'"Is now still a good time to look into your mortgage protection options?"'},
+  {type:'group', text:'Who I Am'},
+  {type:'s', text:'"My job is simple — I\'m a medical field underwriter in the state of [STATE]."'},
+  {type:'s', text:'"I have a database showing every insurance company you\'re medically eligible for."'},
+  {type:'s', text:'"It\'s all based on your age, health, and habits."'},
+],
 {g:[`"Not at all, go ahead"`,
     `Perfect. Lock the frame immediately.\n\n"Great — I'll be quick. The reason I'm reaching out specifically to you today is [VALUE HOOK]..." → Advance to Step 2.`,
     null],
@@ -197,31 +207,47 @@ const S=[
     `Reduce pressure, buy goodwill.\n\n"Completely understand — I only need 90 seconds. [One-sentence value prop]. Worth it?"\n\nYes → Step 2. No → "Totally — when's a better time?" → schedule callback.`,
     1],
  r:[`"Not really interested"`,
-    `Don't flinch. Redirect.\n\n"Fair — most people say that before they hear what I'm actually calling about. It's not for everyone. One quick question before I let you go?"\n\nGet ONE answer → that's your bridge to Step 2.`,
+    `Don't flinch. Redirect.\n\n"Fair — most people say that before they hear what I'm actually calling about. One quick question before I let you go?"\n\nGet ONE answer → that's your bridge to Step 2.`,
     1],
  p:[`"Remove me from your list"`,
-    `Absolute respect — plant a seed.\n\n"Absolutely, I'll take care of that right now. Before I do — is it the timing, or is [category] genuinely off the table for you right now?"\n\nIf they answer → re-engage. If they hang up → move on.`,
+    `Absolute respect — plant a seed.\n\n"Absolutely, I'll take care of that right now. Before I do — is it the timing, or is this genuinely off the table for you right now?"\n\nIf they answer → re-engage. If they hang up → move on.`,
     null]},
 {family:'assertive', cue:'You are the expert. You have something they need. Own the call from the first word.', avoid:"Never sound like you're asking permission to talk."}],
 
 [2,'Gather Intelligence','Listen 80%, talk 20% — find the pain, the goal, the gap',
-`"Quick question before I go any further — just so I'm not wasting your time:
-[Discovery Question 1]. And how are you currently handling [key pain area]?
-What's working, what's not?"
-
-[Take notes. Find PAIN. Find the GOAL. Find the GAP between them.
- This intelligence drives everything that follows.]`,
+[
+  {type:'group', text:'Mortgage'},
+  {type:'q', text:'"How much debt do you currently have on this property?"'},
+  {type:'q', text:'"Who will be responsible for taking on this debt when you pass away?"'},
+  {type:'q', text:'"What\'s your monthly mortgage payment — including taxes and insurance?"'},
+  {type:'q', text:'"How many years left on the loan?"'},
+  {type:'q', text:'"If you sold today, about how much would you get?"'},
+  {type:'s', text:'Equity = sale price − remaining debt. Use this number as leverage.'},
+  {type:'group', text:'Health'},
+  {type:'q', text:'"Do you smoke or use any tobacco products?"'},
+  {type:'q', text:'"Any medical conditions or prescriptions at all?"'},
+  {type:'q', text:'"Any history of heart attack, stroke, cancer, or diabetes?"'},
+  {type:'q', text:'"High blood pressure or high cholesterol? Controlled? How many meds?"'},
+  {type:'q', text:'"Any surgeries or hospitalizations in the last 5 years?"'},
+  {type:'group', text:'Finances'},
+  {type:'q', text:'"Still working, or fully retired?"'},
+  {type:'q', text:'"Any dependents living in the home?"'},
+  {type:'q', text:'"About how much do you bring home per month — just a rough ballpark?"'},
+  {type:'group', text:'Existing Coverage'},
+  {type:'q', text:'"Do you have any existing whole life or term life insurance?"'},
+  {type:'q', text:'"How much coverage, with what company, and what are you paying per month?"'},
+],
 {g:[`Opens up, shares freely`,
-    `Affirm and dig deeper.\n\n"That's really helpful. So from what I'm hearing — [paraphrase their situation]. Is that a fair summary?"\n\nBuild on this foundation → Step 3.`,
+    `Affirm and dig deeper.\n\n"That's really helpful. So from what I'm hearing — [paraphrase]. Is that a fair summary?"\n\nBuild on this foundation → Step 3.`,
     null],
  y:[`Answers briefly, guarded`,
     `Specific follow-up.\n\n"Got it. And just to dig a bit deeper — [specific follow-up Q]. Because that's actually very relevant to what I want to share with you."\n\nStay on Step 2 until you have the full picture.`,
     2],
  o:[`Vague, noncommittal`,
-    `Reframe the question.\n\n"Let me ask it differently — if you could change ONE thing about how you currently handle [area], what would it be?"\n\nStay on Step 2. Get them talking.`,
+    `Reframe the question.\n\n"Let me ask it differently — if you could change ONE thing about how you're currently handling [area], what would it be?"\n\nGet them talking.`,
     2],
  r:[`"Why do you need to know that"`,
-    `Explain your reason.\n\n"Fair question. I only ask because [product] works very differently depending on the situation — the last thing I want is to show you something that's not a fit. That's it. Just one thing: [single key Q]?"`,
+    `Explain your role.\n\n"Fair question. I only ask because the companies I can access are completely different depending on your situation. I don't want to show you something that's not a fit. Just one thing: [single key Q]?"`,
     2],
  p:[`"Just tell me what you're selling"`,
     `One critical question, then proceed.\n\n"Absolutely — getting there. Just one thing first so I can make this relevant: [most critical Q]?"\n\nUse their answer as a bridge. Skip to Step 5 if they refuse to engage further.`,
@@ -229,67 +255,82 @@ What's working, what's not?"
 {family:'curious', cue:"You're a doctor gathering symptoms — genuinely interested in their specific situation.", avoid:"Don't rush through questions. Every answer is leverage you'll use in the pitch."}],
 
 [3,'Develop Rapport','Make them feel heard — mirror, match, find the connection',
-`"That makes total sense. You know, I work with a lot of people in your exact situation,
-and what I keep hearing is [shared pain]. Does that sound familiar?"
-
-[Reference what they told you. Let them feel seen and understood.
- Rapport = trust. Trust = sale. Don't rush this step.]`,
+[
+  {type:'s', text:'"That makes total sense."'},
+  {type:'s', text:'"I work with a lot of people in your exact situation."'},
+  {type:'q', text:'"Does that sound familiar?"'},
+  {type:'q', text:'"And [BENEFICIARY] — what\'s [his/her] plan for that [PAYMENT] on the 1st of the month?"'},
+  {type:'q', text:'"You\'ve got [EQUITY] built up in that home. What happens to that if the mortgage doesn\'t get paid?"'},
+  {type:'s', text:'"The bank doesn\'t stop. 90 days late — they foreclose. [BENEFICIARY] loses the home and the equity."'},
+  {type:'s', text:'"We\'re not here to sell something. We\'re here to make sure [BENEFICIARY] has a plan."'},
+],
 {g:[`"Exactly, that's us"`,
-    `Deepen it.\n\n"Right — and what most people in that spot tell me is that the thing that finally moved the needle was [emotional benefit tied to their pain]. That's actually a big part of why I wanted to reach out to you specifically." → Step 4.`,
+    `Deepen it.\n\n"Right — and that's really who we're doing this for. [BENEFICIARY]'s name on that policy is the whole point." → Step 4.`,
     null],
  y:[`"Sort of, kind of"`,
     `Explore the nuance.\n\n"Tell me more — what does it look like for you specifically?"\n\nBuild the connection before advancing. Stay here until you feel genuine rapport.`,
     3],
  o:[`Polite but distant`,
-    `Pivot to their actual frame.\n\n"Help me understand — what IS your biggest challenge with [area] right now?"\n\nLet them define the pain in their own words. Then mirror it back exactly.`,
+    `Make the equity number real.\n\n"Let me put it this way — [EQUITY] is a real number. That's what you've built. The bank takes their cut first if the mortgage doesn't get paid. [BENEFICIARY] could lose the home and lose that equity too."`,
     3],
  r:[`"Can we just get to the point"`,
-    `Respect and speed up.\n\n"Absolutely. Here's the deal: [one crisp sentence connecting their situation to your solution]."\n\nThey're a logical buyer — skip rapport and transition directly to Step 4.`,
+    `Respect and speed up.\n\n"Absolutely. Here's the honest version: [one crisp sentence connecting their situation to your solution]."\n\nLogical buyer — skip to Step 4.`,
     null],
  p:[`Cold, giving nothing`,
-    `Direct value hook, no fluff.\n\n"Look — I get it. Here's the honest version in 20 seconds: [What you do, who it's for, what changes for them]. Worth 60 more seconds?"\n\nStep 4 if yes. Close the call gracefully if no.`,
+    `Direct value hook.\n\n"Look — I get it. Here's 20 seconds: [What you do, who it's for, what changes for them]. Worth 60 more seconds?"\n\nStep 4 if yes. Close the call gracefully if no.`,
     null]},
 {family:'concerned', cue:'You actually care what happens to their family. Let that be real — not performed.', avoid:"Don't fake warmth. Use their name and reference exactly what they told you."}],
 
 [4,'Transition','Bridge from their world to your solution — get the micro-yes',
-`"Based on everything you've shared with me, [Name], I think I can genuinely help you.
-Let me walk you through what we've been doing for people in exactly your situation.
-Is that cool?"
-
-[Get a YES before you pitch. This micro-commitment is critical.
- If they say yes, they've agreed to listen. Never pitch without it.]`,
+[
+  {type:'s', text:'"So what I\'ll do is run through some questions about the mortgage — just so we know what we\'re solving for."'},
+  {type:'s', text:'"From there, we\'ll look at your health and habits to see what you\'re medically eligible for."'},
+  {type:'s', text:'"Then we\'ll talk about the budget — just to make sure this is long-term affordable."'},
+  {type:'s', text:'"And if we find something that works, the biggest thing we can do today is submit an application — just to see if they\'d approve you."'},
+  {type:'q', text:'"Does that sound fair?"'},
+],
 {g:[`"Yeah, absolutely"`,
-    `Roll directly into Step 5. You have their permission and their attention. Lead strong.`,
+    `Roll directly into Step 5. You have their permission. Lead strong.`,
     null],
  y:[`"What exactly is it"`,
-    `Brief category framing.\n\n"It's essentially [one-sentence category description]. Let me give you the quick version and you tell me if it's worth exploring further — fair?" → Step 5.`,
+    `Brief category framing.\n\n"It's essentially [one-sentence category]. Let me give you the quick version and you tell me if it's worth exploring further — fair?" → Step 5.`,
     null],
  o:[`"How long will this take"`,
-    `Time commitment answer.\n\n"Honestly, five minutes. If it's not a fit, I'll tell you — I'm not going to waste your time." → Step 5.`,
+    `Time commitment.\n\n"Honestly, five minutes. If it's not a fit, I'll tell you — I'm not going to waste your time." → Step 5.`,
     4],
  r:[`"I really don't have time"`,
-    `Compressed pitch offer.\n\n"Give me literally 90 seconds — headline version. If it grabs you, we talk more. If not, I'll let you go. Deal?" → Compressed Step 5.`,
+    `Compressed offer.\n\n"Give me literally 90 seconds — headline version. If it grabs you, we talk more. If not, I'll let you go. Deal?" → Compressed Step 5.`,
     4],
  p:[`"Just send me an email"`,
-    `Address it directly.\n\n"I will — and I want to. But what I'm about to share makes a lot more sense in a two-minute conversation than any email can convey. Can I just cover the key points?"\n\nYes → Step 5. No → get their email + schedule a call.`,
+    `Address it directly.\n\n"I will — and I want to. But what I'm about to share makes a lot more sense in two minutes than any email can. Can I just cover the key points?"\n\nYes → Step 5. No → get their email + schedule a call.`,
     null]},
 {family:'neutral', cue:'This is just what happens next. Smooth, frictionless, obvious.', avoid:'No extra energy. Calm transitions close more than enthusiastic ones.'}],
 
 [5,'Give Presentation','Logic first, emotion second, certainty of company third',
-`"Here's what [Product] does: [Logical benefit 1], [Logical benefit 2], [Logical benefit 3].
-But here's what gets people genuinely excited — [Emotional benefit tied directly to their pain].
-And the company behind all of this has [credibility proof: years, clients, specific results]."
-
-[THE THREE TENS: Certainty about the Product. Certainty about You. Certainty about the Company.
- Hit all three. Never skip one. This is where logical + emotional stacking happens.]`,
+[
+  {type:'group', text:'Company'},
+  {type:'s', text:'"The most affordable company the system is recommending is [CARRIER]."'},
+  {type:'q', text:'"Are you familiar with [CARRIER]?"'},
+  {type:'s', text:'"A-rated company. Been around for over 100 years."'},
+  {type:'s', text:'"They pay out to [BENEFICIARY] within 7 business days of a claim. Every time."'},
+  {type:'group', text:'Benefits'},
+  {type:'s', text:'"Level and immediate — rates never go up, coverage never goes down, effective day one. No waiting period."'},
+  {type:'q', text:'"Are you familiar with Living Benefits?"'},
+  {type:'s', text:'"If you get cancer, heart attack, stroke — you can use this money while you\'re LIVING. Tax-free."'},
+  {type:'s', text:'"70% of people who reach 65 will have a qualifying event. This isn\'t just a death benefit."'},
+  {type:'group', text:'Numbers'},
+  {type:'s', text:'"100% — [FACE VALUE] — [PREMIUM]/mo"'},
+  {type:'s', text:'"75%  — [FACE VALUE] — [PREMIUM]/mo"'},
+  {type:'s', text:'"50%  — [FACE VALUE] — [PREMIUM]/mo"'},
+],
 {g:[`"This sounds interesting"`,
-    `Expand the emotional angle. Get vivid and specific.\n\n"For someone in your exact situation — [their specific pain] — what that means in practice is [vivid, concrete outcome]. That's what usually gets people genuinely excited about this." → Step 6.`,
+    `Expand the emotional angle.\n\n"For someone in your exact situation — [BENEFICIARY]'s name, [DEBT], [EQUITY] — what this means in practice is she/he has time to make a plan. Not a crisis on day one." → Step 6.`,
     null],
- y:[`"Tell me more about [X]"`,
-    `That's their buying signal — go deep on that exact angle.\n\nStack proof on the thing they asked about: case study, specific stat, client story. Then close. → Step 6.`,
+ y:[`"Tell me more about Living Benefits"`,
+    `Buying signal — go deep.\n\n"So let's say you have a heart attack — God forbid. You're in the hospital for a month, looking at $80,000 in bills. [CARRIER] lets you access a portion of your face value to pay that off, tax-free, while you're still alive." → Step 6.`,
     null],
  o:[`"How does it actually work"`,
-    `Mechanism explanation.\n\n"The basic mechanics are: [Step 1] → [Step 2] → [Step 3]. Pretty simple. The part most people are surprised by is [the most impressive element of the process]." → Step 6.`,
+    `Mechanism explanation.\n\n"The basic mechanics: you make a payment → portion goes to cost of insurance → if something happens, [CARRIER] pays [BENEFICIARY] within 7 days. The part that surprises people is the Living Benefits — it's not just a death policy." → Step 6.`,
     5],
  r:[`"Sounds expensive"`,
     `Lost them on value — the rapport foundation wasn't solid enough to hold the price.\n\n"You're right to push back on that. Let me back up for a second — I don't think I made this real enough for your specific situation. Tell me again: [restate their exact pain from Step 2]."\n\nRebuild the emotional case from Step 3 before you re-pitch.`,
@@ -300,23 +341,24 @@ And the company behind all of this has [credibility proof: years, clients, speci
 {family:'assertive', cue:'Slow down. Every point lands heavier when you give it space. You know this cold.', avoid:"Don't rush to the numbers. Build certainty in the company before you quote anything."}],
 
 [6,'Ask for the Order','Assume the sale — ask HOW, never IF',
-`"Here's what I want to do — let's get you started with [product/plan].
-It's [price], and we can have you going as early as [timeframe].
-Does [payment option A] work for you, or would you prefer [payment option B]?"
-
-[Assumptive close. Give two yes-options. Matter-of-fact tone — this is the obvious next step.
- Silence after the close is golden. Don't fill it.]`,
+[
+  {type:'q', text:'"Do you need me to repeat any of those numbers?"'},
+  {type:'s', text:'"The biggest thing we\'re doing today is seeing if we can get you approved."'},
+  {type:'s', text:'"We can\'t make a final decision anyway — I still don\'t know if they\'d approve you."'},
+  {type:'s', text:'"[CARRIER] will mail the policy out first thing tomorrow so you can review everything."'},
+  {type:'q', text:'"Which of these three options makes the most sense for you month to month, and for [BENEFICIARY] when something happens?"'},
+],
 {g:[`"Okay, let's do it"`,
-    `STOP — CEMENT IMMEDIATELY.\n\nDo NOT keep selling. Do not say another word about the product.\n\n"Perfect. Let me get you set up right now."\n\n→ Jump directly to Step 11 before any second thoughts emerge.`,
+    `STOP — CEMENT IMMEDIATELY.\n\nDo NOT keep selling.\n\n"Perfect. Let me get you set up right now."\n\n→ Jump directly to Step 11 before any second thoughts emerge.`,
     null],
  y:[`"Sounds good but..."`,
-    `Handle the 'but' directly.\n\n"Tell me what the 'but' is." → Listen fully without interrupting.\n\n"I hear you. Here's the thing — [address the specific 'but' they gave you]." → Step 7.`,
+    `Handle the 'but' directly.\n\n"Tell me what the 'but' is." → Listen fully.\n\n"I hear you. Here's the thing — [address the specific 'but']." → Step 7.`,
     7],
  o:[`"Let me think about it"`,
-    `Classic soft no. Surface the real objection.\n\n"Of course — and I want you to make the right decision. What specifically are you thinking about? Because if there's something I haven't addressed, I'd rather handle it now than have you sit with it." → Step 7.`,
+    `Surface the real objection.\n\n"Of course. What specifically are you thinking about? Because if there's something I haven't addressed, I'd rather handle it now." → Step 7.`,
     7],
  r:[`"I'm not ready for this"`,
-    `Loop to deflect sequence.\n\n"Completely understand. Can I ask — what would need to be different for this to make sense for you right now?" → Listen → Step 7.`,
+    `Loop to deflect.\n\n"Completely understand. What would need to be different for this to make sense for you right now?" → Listen → Step 7.`,
     7],
  p:[`"Absolutely not"`,
     `Total shutdown at the close means rapport broke somewhere before the pitch.\n\n"I hear you — and I'm not going to push. Before I let you go, can I just ask: what would have needed to be different about this conversation for it to feel right?"\n\nListen. Whatever they say is the thing you missed. Go back to Step 3 and rebuild from there.`,
@@ -324,159 +366,165 @@ Does [payment option A] work for you, or would you prefer [payment option B]?"
 {family:'assertive', cue:"You already know they're saying yes. This is just logistics.", avoid:`Don't say "does that sound good?" — that's a question. State, don't ask. Then hold the silence.`}],
 
 [7,'Deflect Rejection','Acknowledge fully — pivot to one undeniable truth',
-`"I totally understand. And I'm not asking you to make any final decision right now.
-What I am asking is that you focus on just one thing: [Core value in one single sentence].
-Doesn't that make sense?"
-
-[3-Step Deflect: 1. Acknowledge sincerely — don't fake it.
- 2. Reframe to one undeniable truth they already agreed to.
- 3. Re-close on that single truth. Never fight the objection head-on.]`,
+[
+  {type:'s', text:'"I totally understand."'},
+  {type:'s', text:'"I\'m not asking you to make any final decision right now."'},
+  {type:'q', text:'"What specifically do you want to think about?"'},
+  {type:'q', text:'"Is it the price, or is it something else entirely?"'},
+  {type:'q', text:'"The information you have right now is the same you\'ll have next week. What actually changes?"'},
+  {type:'q', text:'"[BENEFICIARY]\'s name is [NAME] — is protecting [him/her] still a real concern for you?"'},
+  {type:'s', text:'"I\'m not asking you to commit — I\'m asking you to focus on just one thing: [core value in one sentence]."'},
+],
 {g:[`"Yeah, I guess that makes sense"`,
     `Re-close while they're agreeable.\n\n"Right. And that's the whole point of moving forward. So let's do this — [re-close]." → Step 6.`,
     6],
  y:[`"Kind of, but I still..."`,
-    `Stack more value with a new angle.\n\nIntroduce a new logical proof point or a new emotional anchor you haven't used yet. Do not repeat yourself. → Step 8.`,
+    `New angle — never repeat.\n\nIntroduce a proof point you haven't used yet. → Step 8.`,
     8],
  o:[`"I just need more time"`,
-    `The time objection.\n\n"Time for what, specifically? Because the information you have right now is the exact same information you'll have in a week — or a month. What actually changes?"\n\nIf they can't answer → "Then there's really no reason to wait, is there?" → Step 6.`,
+    `The time objection.\n\n"Time for what, specifically? The information you have right now is the same you'll have in a week. What actually changes?"\n\nIf they can't answer → "Then there's really no reason to wait, is there?" → Step 6.`,
     6],
  r:[`"I'm just not interested"`,
-    `Pattern interrupt.\n\n"You might be right — this might genuinely not be for you. But let me ask you something: [their specific stated pain]. Is that still a real issue for you?"\n\nGet them back to their pain → re-engage → Step 8.`,
+    `Pattern interrupt.\n\n"You might be right — this might not be for you. But let me ask: [their specific pain from Step 2]. Is that still a real issue?"\n\nGet them back to their pain → Step 8.`,
     8],
  p:[`"Stop pushing me"`,
-    `Full acknowledgment — back off completely.\n\n"You're right — I apologize. The last thing I want is to pressure anyone. Here's what I'll do: I'll send you [something genuinely useful], and if it resonates, you'll know exactly how to reach me."\n\nExit gracefully. Leave the door wide open.`,
+    `Back off completely.\n\n"You're right — I apologize. The last thing I want is to pressure anyone. I'll send you my information, and if it resonates, you know how to reach me."\n\nExit gracefully. Leave the door wide open.`,
     null]},
 {family:'concerned', cue:'Acknowledge fully before you redirect. They need to feel heard before they will move.', avoid:'Never fight the objection head-on. Agree first, then reframe.'}],
 
 [8,'Looping','New angle every single time — never repeat, always escalate',
-`"Here's what I keep coming back to, [Name].
-[NEW logical proof OR new emotional anchor — never the same element as before].
-If I could show you [specific, measurable outcome], would that change how you're looking at this?"
-
-[The Loop Rule: Every loop MUST introduce something genuinely new.
- New logical proof. New case study. New emotional anchor. New angle on the risk of inaction.
- If you repeat yourself, you lose. Escalate the value with every single pass.]`,
+[
+  {type:'s', text:'"Here\'s what I keep coming back to, [Name]."'},
+  {type:'group', text:'Rotate Angles — never repeat one you\'ve already used'},
+  {type:'s', text:'Equity: "[EQUITY] built up — bank forecloses at 91 days. [BENEFICIARY] loses the home AND that equity."'},
+  {type:'s', text:'Living Benefits: "This pays YOU while you\'re alive — tax-free — for cancer, heart attack, stroke."'},
+  {type:'s', text:'No-risk application: "We\'re literally just finding out if they\'d approve you. Nothing more."'},
+  {type:'s', text:'Beneficiary by name: "[NAME] needs time to grieve — not a crisis on day one."'},
+  {type:'q', text:'"If I could show you [specific outcome], would that change how you\'re looking at this?"'},
+  {type:'q', text:'"What would need to be true for this to be an obvious yes for you?"'},
+],
 {g:[`"Maybe, possibly"`,
-    `Re-close now — don't wait.\n\n"Good. Then let's do this: [close]. You're not committing to anything other than getting started and seeing it work." → Step 6.`,
+    `Re-close now.\n\n"Good. Then let's do this — [close]. You're not committing to anything other than finding out if they'd approve you." → Step 6.`,
     6],
  y:[`"Depends on the details"`,
-    `Handle the condition exactly as stated.\n\n"What details specifically?" → Address exactly what they said → Re-close. → Step 6.`,
+    `Handle the exact condition.\n\n"What details specifically?" → Address exactly what they said → Re-close. → Step 6.`,
     6],
  o:[`"I just don't know"`,
-    `Decision clarity question.\n\n"What would need to be true for this to be an obvious yes for you? Tell me exactly." → Listen → Build to that specific thing → Re-close. → Step 6.`,
+    `Decision clarity.\n\n"What would need to be true for this to be an obvious yes? Tell me exactly." → Listen → Build to that → Re-close. → Step 6.`,
     6],
  r:[`"I already told you no"`,
-    `Last attempt — with complete respect.\n\n"I hear you — and I promise this is the last thing I'll say. The one thing I want you to sit with is this: [Most powerful emotional anchor you have]. My contact is [X]. If anything changes, I would genuinely love to hear from you."\n\nExit cleanly.`,
+    `Last attempt — complete respect.\n\n"I hear you. The one thing I want you to sit with is this: [most powerful emotional anchor]. My number is [X]. If anything changes, I'd genuinely love to hear from you."\n\nExit cleanly.`,
     null],
  p:[`"I'm done talking"`,
-    `Graceful, professional exit.\n\n"I completely respect that. Take care of yourself."\n\nEnd the call with full composure. Log result. Never burn a bridge. → Step 12.`,
+    `Graceful exit.\n\n"I completely respect that. Take care of yourself."\n\nEnd with full composure. Never burn a bridge. → Step 12.`,
     12]},
 {family:'upbeat', cue:'Every loop is a fresh start. New angle, new energy — like you just thought of something great.', avoid:'Repeating yourself with more intensity is not a loop. They can feel the difference.'}],
 
 [9,'Lower Action Threshold','Shrink the ask — make the first yes feel tiny',
-`"Here's what I'd suggest instead — rather than the full commitment right now,
-let's start with [smallest possible entry: trial / pilot / smaller package / free assessment].
-You get in, you see the value firsthand, and you have all the information you need
-to make the real decision. Doesn't that seem fair?"
-
-[Lower the risk. Reduce the commitment. Make it easy to say yes to SOMETHING.
- A small yes creates momentum. Momentum creates the bigger yes.]`,
-{g:[`"Yeah, that works for me"`,
-    `Lock it immediately.\n\n"Perfect. Let's get you set up with [the smaller thing] right now." → Cement it → Step 11.`,
+[
+  {type:'s', text:'"We can\'t make a final decision today anyway."'},
+  {type:'s', text:'"I still don\'t even know if they\'d approve you."'},
+  {type:'s', text:'"Worst case — they say no, we move on. Best case — policy arrives in the mail, 30 days to review."'},
+  {type:'q', text:'"Can we at least find out if they\'d approve you?"'},
+  {type:'q', text:'"Out of those three options — which one is in the right ballpark?"'},
+  {type:'q', text:'"Which one were you leaning toward?"'},
+],
+{g:[`"Okay, let's just see"`,
+    `Lock it immediately.\n\n"Perfect. This is just to find out if they'd say yes. Let me pull up the application." → Step 11 to cement first.`,
     null],
- y:[`"What does that look like exactly"`,
-    `Detail the micro-commitment completely.\n\nWalk through exactly what they get, what it costs, what they commit to, and how they exit if they want to. Make it concrete and zero-risk. → Re-close → Step 11.`,
-    11],
+ y:[`"What does that commit me to?"`,
+    `Clarify with zero pressure.\n\n"Nothing today. Literally nothing. No money changes hands. You'll get the policy in the mail, you review it, and THEN you decide. Does that seem fair?"\n\nRe-ask: "Can we at least find out if they'd approve you?"`,
+    9],
  o:[`"Still seems like a lot"`,
-    `Even smaller step.\n\n"Okay — what if we did [the absolute smallest possible thing]? Just enough to see if this is even a conversation worth having." → Re-close on that.`,
+    `Even smaller step.\n\n"What if we just submitted to see if they'd approve you — no decision required? That's it. Just a yes or no from the carrier." → Re-close.`,
     9],
  r:[`"I'm not doing anything right now"`,
-    `Timeline question.\n\n"When would 'right now' become 'the right time' for you? What needs to happen first?" → Get specific → Address that specific thing → Re-close with a concrete timeline. → Step 10.`,
+    `Timeline question.\n\n"When would 'right now' become 'the right time'? What needs to happen first?" → Get specific → Address it → Re-close with a concrete timeline. → Step 10.`,
     10],
- p:[`"Nothing you say will change my mind"`,
-    `Graceful, no-pressure exit.\n\n"I completely respect that — I won't push further. I'll send you [something genuinely useful] with no strings. If your situation changes, you know where to find me."\n\nLog it → Step 12.`,
+ p:[`"Nothing will change my mind"`,
+    `Graceful exit.\n\n"I completely respect that. I'll send you my information with no strings. If your situation changes, you know where to find me."\n\nLog it → Step 12.`,
     12]},
-{family:'upbeat', cue:"Light touch. We're just seeing if they qualify — no big deal, no pressure, no stakes.", avoid:"Don't signal that you're backing down. Lower the ask naturally, not apologetically."}],
+{family:'upbeat', cue:"Light touch. We're just seeing if they qualify — no big deal, no pressure, no stakes.", avoid:"Don't signal you're backing down. Lower the ask naturally, not apologetically."}],
 
 [10,'Lower Pain Threshold','Surface the cost of inaction — make staying still unacceptable',
-`"Let me ask you something honest, [Name].
-What's it actually costing you right now to NOT have [solution]?
-Because from what you told me — [their specific stated pain] — every [week/month/quarter]
-you don't address this, that's [specific cost: dollars lost, time wasted, stress, opportunity gone].
-Does that concern you at all?"
-
-[Future-pace the pain. Not manipulation — they told you their pain.
- You're simply making the cost of inaction vivid and immediate.
- The status quo must become unacceptable.]`,
+[
+  {type:'q', text:'"What\'s it actually costing you right now to NOT have this?"'},
+  {type:'q', text:'"How long can you realistically keep absorbing that?"'},
+  {type:'q', text:'"If something happened tonight — what does [BENEFICIARY] use for that [PAYMENT] on the 1st?"'},
+  {type:'q', text:'"Does that concern you at all?"'},
+  {type:'q', text:'"A little — or honestly more than that, if you\'re being real with yourself?"'},
+  {type:'s', text:'"The bank doesn\'t stop. 90 days late — they foreclose. [BENEFICIARY] loses the home AND the equity."'},
+  {type:'s', text:'"People who wait six months tell me they wish they\'d moved six months ago. Every single time."'},
+],
 {g:[`"You're right, it does bother me"`,
     `Re-close with urgency — don't let the moment pass.\n\n"Then there's really no reason to keep absorbing that, is there? Let's get you started today." → Step 6.`,
     6],
  y:[`"A little, yeah"`,
-    `Amplify the pain.\n\n"A little — or a lot, if you're being truly honest with yourself? How long can you realistically keep absorbing [that specific cost]?"\n\nLet the question sit. Then re-close. → Step 6.`,
+    `Amplify.\n\n"A little — or a lot, if you're being truly honest with yourself? How long can you realistically keep absorbing [that specific cost]?"\n\nLet the question sit. Then re-close. → Step 6.`,
     6],
  o:[`"I manage fine"`,
-    `Surface the deeper, unstated pain.\n\n"You manage — absolutely. But there's a difference between managing and actually solving it. If you could flip a switch and [the outcome they said they want], would you?"\n\n"Then the question isn't whether you want this — it's whether right now is the time." → Step 9.`,
+    `Surface the deeper pain.\n\n"You manage — absolutely. But there's a difference between managing and solving it. If you could flip a switch and [their stated outcome], would you?\n\nThen the question isn't whether you want this — it's whether right now is the time." → Step 9.`,
     9],
  r:[`"I'll deal with it later"`,
-    `Future-pace.\n\n"'Later.' Okay — what does later look like? I'll tell you what I hear consistently: people who wait six months tell me they wish they'd moved six months ago. Every single time. That's all I've got." → Re-close. → Step 6.`,
+    `Future-pace.\n\n"'Later.' What does later look like? People who wait six months tell me they wish they'd moved six months ago. Every single time. That's all I've got." → Re-close. → Step 6.`,
     6],
  p:[`"That's my problem, not yours"`,
-    `Empathy + graceful exit.\n\n"You're completely right — it is. I just hate seeing sharp people keep absorbing costs they don't have to. That's the only reason I pushed. My contact is at [channel]. If anything changes."\n\nExit with genuine warmth.`,
+    `Empathy + graceful exit.\n\n"You're completely right — it is. I just hate seeing people keep absorbing costs they don't have to. My contact is at [channel]. If anything changes."\n\nExit with genuine warmth.`,
     null]},
 {family:'concerned', cue:"You've seen what happens to families without a plan. Let that genuine weight come through.", avoid:"Don't manufacture urgency. Use the real numbers they gave you in Step 2."}],
 
 [11,'Cement the Sale','Kill buyer\'s remorse before it has a chance to form',
-`"You made a great decision. I mean that sincerely.
-Here's what I want you to hold onto: [#1 reason they bought — use THEIR words, their frame].
-A lot of people have this moment right after they commit where they start second-guessing.
-That's completely normal. But you did the right thing.
-And I'm personally going to make sure you see that."
-
-[Cement IMMEDIATELY after the yes. This step is non-negotiable.
- Buyer's remorse kills deals in the hour after close. Don't let them get there alone.]`,
+[
+  {type:'s', text:'"You made a great decision."'},
+  {type:'s', text:'"Here\'s what I want you to hold onto: [THEIR SPECIFIC REASON — use their exact words]."'},
+  {type:'s', text:'"A lot of people have a moment after they commit where they second-guess. That\'s completely normal."'},
+  {type:'s', text:'"You\'re not second-guessing the decision — you\'re second-guessing the feeling."'},
+  {type:'s', text:'"Trust the logic that got you here."'},
+  {type:'s', text:'"You did the right thing for [BENEFICIARY]."'},
+],
 {g:[`"Great, let's do it"`,
-    `Smooth transition.\n\nReinforce once, quickly and confidently. Then move directly to Step 12 to set crystal-clear expectations and eliminate any chance of ghosting.`,
+    `Keep the energy steady — don't oversell it.\n\nReinforce once, confidently. Then move directly to Step 12 to set expectations and eliminate any chance of ghosting.`,
     null],
  y:[`"I hope I'm doing the right thing"`,
-    `Reassurance — be specific, not generic.\n\n"You are — and here's why I can say that with confidence: [specific proof: a result, a guarantee, a client story]. You're going to look back on this call as one of the better decisions you made this year." → Step 12.`,
+    `Specific reassurance.\n\n"You are — and here's why: [CARRIER] has been doing this for over 100 years. They pay claims within 7 days. And [BENEFICIARY]'s name is now going to be on a policy that protects [his/her] home. That's real." → Step 12.`,
     null],
  o:[`"Should I really be doing this"`,
-    `Recommit to the logic.\n\n"Ask yourself this: the reason you said yes was [their specific stated reason]. Has anything about that changed in the last five minutes? No. You're not second-guessing the decision — you're second-guessing the feeling. Trust the logic that got you here." → Step 12.`,
+    `Recommit to their logic.\n\n"Ask yourself: a few minutes ago, you told me [BENEFICIARY] would be responsible for [DEBT] if something happened. Has anything changed about that in the last 10 minutes? No. Trust that." → Step 12.`,
     null],
  r:[`"Actually, wait a second..."`,
-    `Handle the reversal immediately — do not panic.\n\n"Talk to me — what's coming up?" → Listen completely without interrupting. Address the specific thing. Recommit to it.\n\nDo NOT let them off the hook without fully understanding and addressing the real objection. → Loop to Step 7 if needed.`,
+    `Handle immediately — don't panic.\n\n"Talk to me — what's coming up?" → Listen completely. Address the specific thing. Recommit.\n\nDo NOT let them off the hook without understanding the real objection. → Step 7 if needed.`,
     7],
  p:[`"I changed my mind"`,
-    `Hard reversal — stay composed.\n\n"Before we reverse course, help me understand: what specifically changed? Because five minutes ago, [the exact reason they agreed] made complete sense to you. What's different right now?"\n\nIf it's addressable → re-cement it. If it's not → handle it gracefully and don't burn the bridge. → Step 7.`,
+    `Stay composed.\n\n"Before we reverse course — help me understand what changed. Five minutes ago [the exact reason they agreed] made complete sense to you. What's different right now?"\n\nIf addressable → re-cement. If not → exit gracefully. → Step 7.`,
     7]},
 {family:'concerned', cue:"They made the right call. You genuinely believe that. Say it like you mean it.", avoid:"Don't keep selling. The sale is done. Cementing is reassurance, not pitch."}],
 
 [12,'Clarify Next Steps','Set exact expectations — prevent ghosting, create accountability',
-`"Here's exactly what happens from here:
-[Next action + specific timeframe]. [What they'll receive + exactly when].
-[When we speak next + what that call covers]. And if anything comes up before then —
-here's how to reach me directly: [Your direct contact].
-Any questions at all before we wrap up?"
-
-[Be crystal clear on every single next step. Ambiguity creates ghosting.
- Specificity creates accountability. Make the next contact feel already scheduled.
- The call isn't over until expectations are perfectly set.]`,
+[
+  {type:'s', text:'"[CARRIER] will draft the first premium within a few days of approval."'},
+  {type:'q', text:'"Do you have a specific draft date that works? Anywhere between the 1st and 28th."'},
+  {type:'s', text:'"They\'ll mail the policy out for you to review — all the fine print, every detail."'},
+  {type:'s', text:'"No final decisions until you\'ve reviewed the policy and it\'s exactly what you want."'},
+  {type:'q', text:'"Any questions at all before we wrap up?"'},
+  {type:'s', text:'"My direct line: [YOUR NUMBER]. Call me for anything."'},
+],
 {g:[`"Nope, all good"`,
-    `Perfect close.\n\n"Excellent. You're going to love this. Talk [specific next contact date]."\n\nLog the call. Update your CRM. Note specifically what worked and what color sequence got you here.`,
+    `Perfect close.\n\n"Excellent. You're going to love this. Talk [specific next contact date]."\n\nLog the call. Note what worked and what color sequence got you here.`,
     null],
  y:[`"Just one quick question..."`,
-    `Handle the final question completely — give it your full attention.\n\nThis is your last impression. A thorough answer here cements confidence. Then re-confirm all next steps clearly.`,
+    `Handle it completely — full attention.\n\nThis is your last impression. A thorough answer cements confidence. Re-confirm all next steps clearly.`,
     12],
  o:[`"How do I cancel if..."`,
-    `Reassurance — zero defensiveness.\n\n"Here's exactly how that works: [the cancellation or exit process, step by step]. No games, no hidden steps. I'd rather you know that upfront than ever feel trapped." → Recommit to the relationship.`,
+    `Reassurance — zero defensiveness.\n\n"Here's exactly how that works: [the exit process, step by step]. No games, no hidden steps. I'd rather you know that upfront than ever feel trapped."`,
     null],
  r:[`"I have some concerns about..."`,
-    `Re-cement. Take each concern with complete seriousness.\n\n"I'm glad you're raising these now rather than sitting with them. Let's handle each one."\n\nAddress them one at a time. → Step 11 to re-cement if needed.`,
+    `Re-cement. Take it seriously.\n\n"I'm glad you're raising these now rather than sitting with them. Let's handle each one."\n\nAddress one at a time. → Step 11 to re-cement if needed.`,
     11],
  p:[`"I'm not sure about this anymore"`,
-    `Hard buyer's remorse — slow it down.\n\n"Let's slow down for a second. What specifically are you not sure about?" → Address each item patiently.\n\nIf they're firm: "Here's what I'd like you to do: sleep on it tonight. I'll call you tomorrow at [specific time]. If you still want to reverse course, I'll absolutely respect that."\n\nBuy 24 hours. Recommit tomorrow. → Step 11.`,
+    `Slow it down.\n\n"Let's slow down for a second. What specifically are you not sure about?" → Address each item.\n\n"Here's what I'd ask you to do: sleep on it tonight. I'll call you tomorrow at [specific time]. If you still want to cancel, I'll absolutely respect that."\n\nBuy 24 hours. Recommit tomorrow. → Step 11.`,
     11]},
 {family:'neutral', cue:'Organized, specific, unhurried. You have done this a hundred times.', avoid:'Ambiguity creates ghosting. Every next step needs a specific time attached to it.'}]
+
 ];
 
 // ── State ──
@@ -490,7 +538,7 @@ function render(){
   renderLog();
 }
 
-function renderStep([id,name,sub,script,resp,tone]){
+function renderStep([id,name,sub,items,resp,tone]){
   const isCur=cur===id, isDone=done.has(id), isOpen=openSet.has(id);
   const selKey=sel[id];
   const tm=TM[tone.family];
@@ -511,12 +559,18 @@ function renderStep([id,name,sub,script,resp,tone]){
     </button>`;
   }).join('');
 
-  // tonality block (shown when expanded)
+  // tonality block
   const toneHtml=`<div class="tblock" style="border-left-color:${tc};">
     <div class="tblock-primary" style="color:${tc};">${tm.label}</div>
     <div class="tblock-cue">${tone.cue}</div>
     <div class="tblock-avoid">${tone.avoid}</div>
   </div>`;
+
+  // items list
+  const itemsHtml=`<div class="items-list">${items.map(it=>{
+    if(it.type==='group') return `<div class="igroup">${it.text}</div>`;
+    return `<div class="item item-${it.type}">${it.text}</div>`;
+  }).join('')}</div>`;
 
   // handler
   let handlerHtml='';
@@ -564,11 +618,11 @@ function renderStep([id,name,sub,script,resp,tone]){
     </div>
     <div class="sbody">
       ${toneHtml}
-      <div class="slabel">Script</div>
-      <div class="sblock">${script}</div>
       <div class="slabel" style="margin-bottom:8px;">Prospect Response — Click their reaction</div>
       <div class="crow">${cbtnRow}</div>
       ${handlerHtml}
+      <div class="slabel" style="margin:16px 0 8px;">Questions & Statements</div>
+      ${itemsHtml}
       ${navHtml}
     </div>
   </div>`;
